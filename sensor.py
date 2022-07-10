@@ -70,7 +70,7 @@ class PVForecastCZSensor(SensorEntity):
 
         This is the only method that should fetch new data for Home Assistant.
         """
-        if self._available == False or self._last_forecast_update is None or self._last_forecast_update - datetime.datetime.now() < 8*datetime.datetime.hour:
+        if self._available == False or self._last_forecast_update is None or (self._last_forecast_update - datetime.datetime.now()).seconds < 8*3600:
             self._update_forecast_data()
         
         #set forecast for the current hour as sensor current value
@@ -79,7 +79,7 @@ class PVForecastCZSensor(SensorEntity):
         if str(current_hour) in self._forecast_data:
             self._value = self._forecast_data[str(current_hour)]
         else:
-            _LOGGER.exception(f"Cannot find forecast for '{current_hour.isoformat()}' hour.")
+            _LOGGER.exception(f"Cannot find forecast for '{current_hour}' hour.")
         
         _LOGGER.info(f"Updated PVforecast (now={current_time}): {self._forecast_data}")
 
