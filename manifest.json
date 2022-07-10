@@ -1,0 +1,10 @@
+{
+  "domain": "pvforecast_cz",
+  "name": "PVforecast.cz sensor",
+  "documentation": "https://github.com/pavelb84/pvforecast_cz",
+  "dependencies": [],
+  "codeowners": [],
+  "requirements": ["requests"],
+  "iot_class": "cloud_polling",
+  "version": "0.0.1"
+}
