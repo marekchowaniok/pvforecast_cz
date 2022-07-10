@@ -35,7 +35,7 @@ class PVForecastCZSensor(SensorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return 'Current OTE Energy Cost'
+        return 'PV Forecast Sensor'
 
     @property
     def native_value(self):
