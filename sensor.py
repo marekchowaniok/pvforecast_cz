@@ -15,7 +15,7 @@ import logging
 
 """ Constants """
 NATIVE_UNIT_OF_MEASUREMENT = "W/m^2"
-DEVICE_CLASS = "monetary"
+DEVICE_CLASS = "illuminance"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,6 +31,9 @@ class PVForecastCZSensor(SensorEntity):
         """Initialize the sensor."""
         self._value = None
         self._attr = None
+        self._forecast_data = None
+        self._last_forecast_update = None
+        self._available = False
 
     @property
     def name(self):
@@ -67,12 +70,22 @@ class PVForecastCZSensor(SensorEntity):
 
         This is the only method that should fetch new data for Home Assistant.
         """
-        self._get_current_value()
+        if self._last_forecast_update is None or self._last_forecast_update - datetime.datetime.now() < 8*datetime.datetime.hour:
+            self._update_forecast_data()
+        
+        #set forecast for the current hour as sensor current value
+        current_time = datetime.datetime.now()
+        current_hour = datetime.datetime(current_time.year, current_time.month, current_time.day, current_time.hour)
+        if current_hour in self._forecast_data:
+            self._value = self._forecast_data[current_hour]
+        else:
+            _LOGGER.exception(f"Cannot find forecast for '{current_hour}' hour.")
 
 
-    def _get_current_value(self):
+    def _update_forecast_data(self):
         """ 
         Parse the data and return forecast
+        This should be called only once/twice a day!
         """
 
         try:
@@ -87,17 +100,20 @@ class PVForecastCZSensor(SensorEntity):
             )
             url = "http://www.pvforecast.cz/api/"
 
-            date = datetime.datetime.now()
-
             response = requests.get(url=url, params=params)
             json = response.json()
 
-            forecast = dict()
             for date, solar in json:
-                forecast[date] = solar
+                self._forecast_data[datetime.fromisoformat(date)] = solar
+            
+            #remove old data in past
+            cur_time = datetime.datetime.now()
+            for date in self._forecast_data:
+                if date < cur_time:
+                    del self._forecast_data[date]
 
-            self._value = 0
-            self._attr = forecast
+            self._attr = self._forecast_data
+            self._last_forecast_update = cur_time
             self._available = True
         except:
             self._available = False
