@@ -70,16 +70,18 @@ class PVForecastCZSensor(SensorEntity):
 
         This is the only method that should fetch new data for Home Assistant.
         """
-        if self._last_forecast_update is None or self._last_forecast_update - datetime.datetime.now() < 8*datetime.datetime.hour:
+        if self._available == False or self._last_forecast_update is None or self._last_forecast_update - datetime.datetime.now() < 8*datetime.datetime.hour:
             self._update_forecast_data()
         
         #set forecast for the current hour as sensor current value
         current_time = datetime.datetime.now()
         current_hour = datetime.datetime(current_time.year, current_time.month, current_time.day, current_time.hour)
-        if current_hour in self._forecast_data:
-            self._value = self._forecast_data[current_hour]
+        if str(current_hour) in self._forecast_data:
+            self._value = self._forecast_data[str(current_hour)]
         else:
-            _LOGGER.exception(f"Cannot find forecast for '{current_hour}' hour.")
+            _LOGGER.exception(f"Cannot find forecast for '{current_hour.isoformat()}' hour.")
+        
+        _LOGGER.info(f"Updated PVforecast (now={current_time}): {self._forecast_data}")
 
 
     def _update_forecast_data(self):
@@ -104,12 +106,12 @@ class PVForecastCZSensor(SensorEntity):
             json = response.json()
 
             for date, solar in json:
-                self._forecast_data[datetime.fromisoformat(date)] = solar
+                self._forecast_data[date] = solar
             
             #remove old data in past
             cur_time = datetime.datetime.now()
             for date in self._forecast_data:
-                if date < cur_time:
+                if datetime.fromisoformat(date) < cur_time:
                     del self._forecast_data[date]
 
             self._attr = self._forecast_data
@@ -117,4 +119,6 @@ class PVForecastCZSensor(SensorEntity):
             self._available = True
         except:
             self._available = False
+            cur_time = datetime.datetime.now()
+            self._last_forecast_update = cur_time
             _LOGGER.exception("Error occured while retrieving data from pvforecast.cz.")
