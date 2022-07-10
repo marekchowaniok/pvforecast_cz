@@ -31,7 +31,7 @@ class PVForecastCZSensor(SensorEntity):
         """Initialize the sensor."""
         self._value = None
         self._attr = None
-        self._forecast_data = None
+        self._forecast_data = dict()
         self._last_forecast_update = None
         self._available = False
 
