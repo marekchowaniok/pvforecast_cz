@@ -77,13 +77,13 @@ class PVForecastCZSensor(SensorEntity):
 
         try:
             params = dict (
-                key="l71h9m"
-                lat=48.965
-                lon=16.597
-                forecast="pv"
-                format="json"
-                type="hour"
-                number=48
+                key="l71h9m",
+                lat=48.965,
+                lon=16.597,
+                forecast="pv",
+                format="json",
+                type="hour",
+                number=48,
             )
             url = "http://www.pvforecast.cz/api/"
 
