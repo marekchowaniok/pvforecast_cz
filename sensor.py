@@ -111,7 +111,7 @@ class PVForecastCZSensor(SensorEntity):
             #remove old data in past
             cur_time = datetime.datetime.now()
             for date in self._forecast_data:
-                if datetime.fromisoformat(date) < cur_time:
+                if datetime.datetime.fromisoformat(date) < cur_time:
                     del self._forecast_data[date]
 
             self._attr = self._forecast_data
