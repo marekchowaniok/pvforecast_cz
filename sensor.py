@@ -79,9 +79,10 @@ class PVForecastCZSensor(SensorEntity):
         if str(current_hour) in self._forecast_data:
             self._value = self._forecast_data[str(current_hour)]
         else:
-            _LOGGER.exception(f"Cannot find forecast for '{current_hour}' hour.")
+            #_LOGGER.warning(f"Cannot find forecast for '{current_hour}' hour.")
+            pass
         
-        _LOGGER.info(f"Updated PVforecast (now={current_time}): {self._forecast_data}")
+        #_LOGGER.info(f"Updated PVforecast (now={current_time}): {self._forecast_data}")
 
 
     def _update_forecast_data(self):
@@ -110,13 +111,17 @@ class PVForecastCZSensor(SensorEntity):
             
             #remove old data in past
             cur_time = datetime.datetime.now()
+            to_delete = []
             for date in self._forecast_data:
                 if datetime.datetime.fromisoformat(date) < cur_time:
-                    del self._forecast_data[date]
+                    to_delete.append(date)
+            for date in to_delete:
+                del self._forecast_data[date]
 
             self._attr = self._forecast_data
             self._last_forecast_update = cur_time
             self._available = True
+            _LOGGER.info(f"Retrieved new PVforecast data from '{url}': {self._forecast_data}")
         except:
             self._available = False
             cur_time = datetime.datetime.now()
