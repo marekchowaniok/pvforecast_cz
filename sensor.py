@@ -14,7 +14,7 @@ import logging
 
 
 """ Constants """
-NATIVE_UNIT_OF_MEASUREMENT = "W/m^2"
+NATIVE_UNIT_OF_MEASUREMENT = "W/m²"
 DEVICE_CLASS = "irradiance"
 # STATE_CLASS = "measurement"
 state_class = "measurement"
