@@ -1,6 +1,6 @@
 {
-  "domain": "pvforecast_cz2",
-  "name": "PVforecast.cz2 sensor",
+  "domain": "pvforecast_cz",
+  "name": "PVforecast.cz sensor",
   "documentation": "https://github.com/marekchowaniok/pvforecast_cz",
   "dependencies": [],
   "codeowners": [],
