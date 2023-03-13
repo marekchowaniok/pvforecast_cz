@@ -101,7 +101,7 @@ class PVForecastCZSensor(SensorEntity):
                 forecast="pv",
                 format="json",
                 type="hour",
-                number=48,
+                number=72,
             )
             url = "http://www.pvforecast.cz/api/"
 
