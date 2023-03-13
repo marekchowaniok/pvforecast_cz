@@ -1,5 +1,5 @@
 {
-  "name": "PVforecast.cz sensor",
+  "name": "PVforecast.cz3 sensor",
   "content_in_root": true,
   "render_readme": true,
   "domains": ["sensor"],
