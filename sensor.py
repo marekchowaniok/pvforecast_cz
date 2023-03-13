@@ -15,8 +15,8 @@ import logging
 
 """ Constants """
 NATIVE_UNIT_OF_MEASUREMENT = "W/m^2"
-DEVICE_CLASS = "irradiance"
-STATE_CLASS = "measurement"
+device_class = SensorDeviceClass.IRRADIANCE
+state_class = "measurement"
 
 
 _LOGGER = logging.getLogger(__name__)
