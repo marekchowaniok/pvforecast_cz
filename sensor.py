@@ -96,9 +96,9 @@ class PVForecastCZSensor(SensorEntity):
 
         try:
             params = dict (
-                key="havnhz",
-                lat=50.159,
-                lon=15.818,
+                key="",
+                lat=,
+                lon=,
                 forecast="pv",
                 format="json",
                 type="hour",
