@@ -1,10 +1,10 @@
 {
   "domain": "pvforecast_cz",
-  "name": "PVforecast.cz sensor",
+  "name": "PV Forecast CZ",
   "documentation": "https://github.com/marekchowaniok/pvforecast_cz",
   "dependencies": [],
-  "codeowners": [],
-  "requirements": ["requests"],
-  "iot_class": "cloud_polling",
-  "version": "0.0.1"
+  "codeowners": ["@marekchowaniok"],
+  "requirements": ["aiohttp>=3.7.4"],
+  "config_flow": false,
+  "version": "1.0.0"
 }
