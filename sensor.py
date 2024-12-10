@@ -185,7 +185,7 @@ class PVForecastCZSensor(SensorEntity):
             json_data = await async_fetch_data(self, self.session, API_URL, params)
             if json_
                 self._forecast_data = {}  # Clear existing data
-                for date, solar in json_
+                for date, solar in json_data.items():
                     self._forecast_data[date] = solar
                 self._cleanup_forecast_data()
                 self._attr = self._forecast_data
