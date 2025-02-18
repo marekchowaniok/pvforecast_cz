@@ -1,0 +1,17 @@
+
+**Configuration Parameters:**
+
+*   **`api_key`** (Required): Your API key from PVForecast.cz. You need to register at [PVForecast.cz](http://www.pvforecast.cz/) to obtain an API key.
+*   **`latitude`** (Required): The latitude of your location for the forecast.
+*   **`longitude`** (Required): The longitude of your location for the forecast.
+*   **`forecast_type`** (Optional, default: `pv`): Specifies the type of forecast data to retrieve.  Currently, only `pv` (photovoltaic) forecast is supported by the API.
+*   **`forecast_format`** (Optional, default: `json`):  Defines the format of the data returned by the API.  `json` is the only supported format.
+*   **`forecast_time_type`** (Optional, default: `hour`): Sets the time interval for the forecast data.  `hour` is the only supported time type.
+*   **`forecast_hours`** (Optional, default: `72`):  Determines the number of forecast hours to retrieve from the API.
+
+## Usage
+
+Once configured, the PVForecast CZ sensor will be available in Home Assistant as `sensor.pv_forecast`. It provides the solar power forecast in Watts per square meter (W/m²).
+
+You can display the sensor's value on your Lovelace dashboards, use it in automations, or incorporate it into scripts.
+
