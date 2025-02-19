@@ -157,7 +157,7 @@ class PVForecastCZSensor(SensorEntity):
             now.year, now.month, now.day, now.hour
         )
         # Ensure the keys in self._forecast_data are strings in the format of str(current_hour)
-        if str(current_hour) in self._forecast_
+        if str(current_hour) in self._forecast_:
             self._value = self._forecast_data[str(current_hour)]
             self._available = True
         else:
