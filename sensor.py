@@ -151,19 +151,13 @@ class PVForecastCZSensor(SensorEntity):
 
     async def async_update(self):
         """Update the sensor value and fetch new forecast data if needed."""
+        """Update the sensor value."""
         now = datetime.datetime.now()
-
-        if self._last_data_update is None or (
-            now - self._last_data_update
-        ) >= datetime.timedelta(hours=1):
-            await self._async_update_forecast_data()
-            self._last_data_update = now
-
         current_hour = datetime.datetime(
             now.year, now.month, now.day, now.hour
         )
         # Ensure the keys in self._forecast_data are strings in the format of str(current_hour)
-        if str(current_hour) in self._forecast_data:  # Corrected line 165: _forecast_data and added colon
+        if str(current_hour) in self._forecast_  # Corrected line 165: _forecast_data and added colon
             self._value = self._forecast_data[str(current_hour)]
             self._available = True
         else:
@@ -184,12 +178,11 @@ class PVForecastCZSensor(SensorEntity):
 
         try:
             json_data = await async_fetch_data(self, self.session, API_URL, params)
-            if json_data: # Corrected line 186:  if json_data: and added colon
+            if json_ # Corrected line 186:  if json_ and added colon
                 self._forecast_data = {}  # Clear existing data
                 for date, solar in json_data.items():
                     self._forecast_data[date] = solar
                 self._cleanup_forecast_data()
-                self._attr = self._forecast_data
                 self._last_forecast_update = datetime.datetime.now()
                 self._available = True
                 _LOGGER.info(
@@ -210,8 +203,6 @@ class PVForecastCZSensor(SensorEntity):
             _LOGGER.exception("An unexpected error occurred: %s", e)
             self._available = False
 
-        self._cleanup_forecast_data()
-
     def _cleanup_forecast_data(self):
         """Removes past entries from the forecast data."""
         now = datetime.datetime.now()
@@ -225,6 +216,17 @@ class PVForecastCZSensor(SensorEntity):
 
 async def async_fetch_data(self, session, url, params):
     """Fetches data from the API asynchronously."""
+    """
+    Fetches JSON data from the API asynchronously.
+
+    Args:
+        session: aiohttp ClientSession.
+        url: API URL to fetch data from.
+        params: Dictionary of parameters to send with the request.
+
+    Returns:
+        JSON response from the API if successful, None otherwise.
+    """
     async with session.get(url, params=params) as response:
         if response.status == 200:
             return await response.json()
