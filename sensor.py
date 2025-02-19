@@ -125,7 +125,6 @@ class PVForecastCZSensor(SensorEntity):
         self.entity_description = entity_description
 
         self._value = None
-        self._attr = {}
         self._forecast_data = {}
         self._last_forecast_update = None
         self._last_data_update = None
@@ -151,14 +150,9 @@ class PVForecastCZSensor(SensorEntity):
 
     async def async_update(self):
         """Update the sensor value and fetch new forecast data if needed."""
-        """Update the sensor value."""
-        now = datetime.datetime.now()
-        current_hour = datetime.datetime(
-            now.year, now.month, now.day, now.hour
-        )
-        # Ensure the keys in self._forecast_data are strings in the format of str(current_hour)
-        if str(current_hour) in self._forecast_:
-            self._value = self._forecast_data[str(current_hour)]
+        current_hour_str = str(datetime.datetime.now().replace(minute=0, second=0, microsecond=0))
+        if current_hour_str in self._forecast_
+            self._value = self._forecast_data[current_hour_str]
             self._available = True
         else:
             self._value = None
@@ -178,11 +172,11 @@ class PVForecastCZSensor(SensorEntity):
 
         try:
             json_data = await async_fetch_data(self.session, API_URL, params)
-            if json_
+            if json_data is not None:
                 self._forecast_data = {}  # Clear existing data
                 for date, solar in json_data.items():
                     self._forecast_data[date] = solar
-                self._cleanup_forecast_data()
+                self._cleanup_forecast_data() # Cleanup after new data is loaded
                 self._last_forecast_update = datetime.datetime.now()
                 self._available = True
                 _LOGGER.info(
@@ -215,7 +209,6 @@ class PVForecastCZSensor(SensorEntity):
             del self._forecast_data[date]
 
 async def async_fetch_data(session, url, params):
-    """Fetches data from the API asynchronously."""
     """
     Fetches JSON data from the API asynchronously.
 
