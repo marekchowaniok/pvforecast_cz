@@ -162,7 +162,8 @@ class PVForecastCZSensor(SensorEntity):
         current_hour = datetime.datetime(
             now.year, now.month, now.day, now.hour
         )
-        if str(current_hour) in self._forecast_
+        # Ensure the keys in self._forecast_data are strings in the format of str(current_hour)
+        if str(current_hour) in self._forecast_data:  # Corrected line 165: _forecast_data and added colon
             self._value = self._forecast_data[str(current_hour)]
             self._available = True
         else:
@@ -183,7 +184,7 @@ class PVForecastCZSensor(SensorEntity):
 
         try:
             json_data = await async_fetch_data(self, self.session, API_URL, params)
-            if json_
+            if json_data: # Corrected line 186:  if json_data: and added colon
                 self._forecast_data = {}  # Clear existing data
                 for date, solar in json_data.items():
                     self._forecast_data[date] = solar
@@ -196,6 +197,9 @@ class PVForecastCZSensor(SensorEntity):
                     API_URL,
                     self._forecast_data,
                 )
+            else:
+                _LOGGER.warning("No data received from PVforecast API. Check API response or connection.")
+                self._available = False # Set availability to False if no data
         except aiohttp.ClientError as e:
             _LOGGER.error("Connection error while fetching PV forecast: %s", e)
             self._available = False
@@ -225,5 +229,5 @@ async def async_fetch_data(self, session, url, params):
         if response.status == 200:
             return await response.json()
         else:
-            _LOGGER.error(f"Error fetching  {response.status}")
+            _LOGGER.error(f"Error fetching data: {response.status}, URL: {url}, Params: {params}") # Added URL and params to log
             return None
