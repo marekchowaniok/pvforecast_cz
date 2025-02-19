@@ -177,7 +177,7 @@ class PVForecastCZSensor(SensorEntity):
         }
 
         try:
-            json_data = await async_fetch_data(self, self.session, API_URL, params)
+            json_data = await async_fetch_data(self.session, API_URL, params)
             if json_
                 self._forecast_data = {}  # Clear existing data
                 for date, solar in json_data.items():
@@ -214,7 +214,7 @@ class PVForecastCZSensor(SensorEntity):
         for date in to_delete:
             del self._forecast_data[date]
 
-async def async_fetch_data(self, session, url, params):
+async def async_fetch_data(session, url, params):
     """Fetches data from the API asynchronously."""
     """
     Fetches JSON data from the API asynchronously.
