@@ -167,7 +167,7 @@ class PVForecastCZSensor(SensorEntity):
             minute=0, second=0, microsecond=0
         ).isoformat()
 
-        if current_hour in self._forecast_data:
+        if current_hour in self._forecast_
             self._attr_native_value = self._forecast_data[current_hour]
             self._attr_available = True
         else:
@@ -179,7 +179,7 @@ class PVForecastCZSensor(SensorEntity):
                 await self._async_update_forecast_data()
             
             # Check again after potential update
-            if current_hour in self._forecast_data:
+            if current_hour in self._forecast_
                 self._attr_native_value = self._forecast_data[current_hour]
                 self._attr_available = True
             else:
@@ -200,7 +200,7 @@ class PVForecastCZSensor(SensorEntity):
 
         try:
             json_data = await async_fetch_data(self.session, API_URL, params)
-            if json_data:
+            if json_
                 self._forecast_data.clear()  # Clear existing data
                 for date, solar in json_data.items():
                     try:
@@ -231,7 +231,7 @@ class PVForecastCZSensor(SensorEntity):
         """Remove past entries from the forecast data."""
         now = datetime.datetime.now()
         to_delete = []
-        for date in self._forecast_data:
+        for date in self._forecast_
             try:
                 if datetime.datetime.fromisoformat(date) < now:
                     to_delete.append(date)
@@ -266,5 +266,5 @@ async def async_fetch_data(
             )
             return None
     except aiohttp.ClientError as err:
-        _LOGGER.error("Connection error fetching data: %s", err)
+        _LOGGER.error("Connection error fetching  %s", err)
         raise ApiConnectionError from err
