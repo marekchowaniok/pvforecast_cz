@@ -1,6 +1,7 @@
 """Platform for sensor integration."""
 import logging
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, ClassVar
+import datetime
 
 import aiohttp
 import voluptuous as vol
@@ -107,7 +108,7 @@ async def async_setup_platform(
 class PVForecastCZSensor(SensorEntity):
     """Representation of a PV Forecast CZ sensor."""
 
-    _forecast_ Dict[str, float]
+    _forecast_ ClassVar[Dict[str, float]] = {}
 
     def __init__(
         self,
@@ -141,7 +142,7 @@ class PVForecastCZSensor(SensorEntity):
         self.forecast_hours = forecast_hours
 
         self._attr_native_value = None
-        self._forecast_data = {}
+        #self._forecast_data = {} # Removed instance level initialization
         self._last_forecast_update: Optional[datetime.datetime] = None
         self._attr_available = False
 
