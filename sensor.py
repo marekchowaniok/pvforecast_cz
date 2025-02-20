@@ -26,6 +26,8 @@ from .const import (
     CONF_FORECAST_FORMAT,
     CONF_FORECAST_TIME_TYPE,
     CONF_FORECAST_HOURS,
+    InvalidApiKeyError,
+    ApiConnectionError,
     MANUFACTURER,
     MODEL,
 )
@@ -147,7 +149,7 @@ class PVForecastCZSensor(SensorEntity):
         """Handle when the entity is added to Home Assistant."""
         # Initial data fetch
         await self._async_update_forecast_data()
-        
+
         self.async_on_remove(
             async_track_time_interval(
                 self.hass, self._async_scheduled_update, datetime.timedelta(hours=1)
@@ -165,19 +167,19 @@ class PVForecastCZSensor(SensorEntity):
             minute=0, second=0, microsecond=0
         ).isoformat()
 
-        if current_hour in self._forecast_data:
+        if current_hour in self._forecast_
             self._attr_native_value = self._forecast_data[current_hour]
             self._attr_available = True
         else:
             # If we don't have data for the current hour, try to fetch new data
             if not self._forecast_data or (
-                self._last_forecast_update 
+                self._last_forecast_update
                 and (datetime.datetime.now() - self._last_forecast_update).total_seconds() > 3600
             ):
                 await self._async_update_forecast_data()
-            
+
             # Check again after potential update
-            if current_hour in self._forecast_data:
+            if current_hour in self._forecast_
                 self._attr_native_value = self._forecast_data[current_hour]
                 self._attr_available = True
             else:
@@ -198,7 +200,7 @@ class PVForecastCZSensor(SensorEntity):
 
         try:
             json_data = await async_fetch_data(self.session, API_URL, params)
-            if json_data:
+            if json_
                 self._forecast_data.clear()  # Clear existing data
                 for date, solar in json_data.items():
                     try:
@@ -206,7 +208,7 @@ class PVForecastCZSensor(SensorEntity):
                     except (TypeError, ValueError) as err:
                         _LOGGER.warning("Invalid solar value for date %s: %s", date, err)
                         continue
-                
+
                 self._cleanup_forecast_data()
                 self._last_forecast_update = datetime.datetime.now()
                 self._attr_available = True
@@ -218,8 +220,11 @@ class PVForecastCZSensor(SensorEntity):
             else:
                 _LOGGER.warning("No data received from PVforecast API")
                 self._attr_available = False
-        except aiohttp.ClientError as err:
-            _LOGGER.error("Connection error while fetching PV forecast: %s", err)
+        except ApiConnectionError:
+            _LOGGER.error("API Connection Error")
+            self._attr_available = False
+        except InvalidApiKeyError:
+            _LOGGER.error("Invalid API Key Error")
             self._attr_available = False
         except Exception as err:
             _LOGGER.exception("An unexpected error occurred: %s", err)
@@ -229,14 +234,14 @@ class PVForecastCZSensor(SensorEntity):
         """Remove past entries from the forecast data."""
         now = datetime.datetime.now()
         to_delete = []
-        for date in self._forecast_data:
+        for date in self._forecast_
             try:
                 if datetime.datetime.fromisoformat(date) < now:
                     to_delete.append(date)
             except ValueError as err:
                 _LOGGER.warning("Invalid date format: %s, Error: %s", date, err)
                 to_delete.append(date)
-        
+
         for date in to_delete:
             del self._forecast_data[date]
 
@@ -250,14 +255,19 @@ async def async_fetch_data(
         async with session.get(url, params=params) as response:
             if response.status == 200:
                 return await response.json()
-            
-            _LOGGER.error(
-                "HTTP error %s fetching data from %s with params: %s",
-                response.status,
-                url,
-                params,
-            )
-            return None
+            elif response.status == 401 or response.status == 403:
+                _LOGGER.error(
+                    "API error %s: Invalid API key", response.status
+                )
+                raise InvalidApiKeyError # Vyvoláme InvalidApiKeyError
+            else:
+                _LOGGER.error(
+                    "HTTP error %s fetching data from %s with params: %s",
+                    response.status,
+                    url,
+                    params,
+                )
+                return None # Pro ostatní HTTP chyby vracíme None (nebo můžeš vyvolat obecnější výjimku)
     except aiohttp.ClientError as err:
-        _LOGGER.error("Connection error fetching data: %s", err)
-        return None
+        _LOGGER.error("Connection error fetching  %s", err)
+        raise ApiConnectionError from err # Vyvoláme ApiConnectionError a zachováme původní výjimku pro debugging

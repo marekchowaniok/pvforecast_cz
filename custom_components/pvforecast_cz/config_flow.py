@@ -18,6 +18,8 @@ from .const import (
     DEFAULT_FORECAST_FORMAT,
     DEFAULT_FORECAST_TIME_TYPE,
     DEFAULT_FORECAST_HOURS,
+    InvalidApiKeyError,
+    ApiConnectionError,
 )
 
 class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -35,10 +37,9 @@ class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # Validate the API key by making a test API call
             try:
                 session = async_get_clientsession(self.hass)
-                # Use your existing async_fetch_data function
                 test_data = await async_fetch_data(
                     session,
-                    "https://www.pvforecast.cz/api/",  
+                    "https://www.pvforecast.cz/api/",
                     {
                         "key": user_input[CONF_API_KEY],
                         "lat": user_input[CONF_LATITUDE],
@@ -56,14 +57,14 @@ class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         data=user_input,
                     )
                 else:
-                    errors["base"] = "unknown"
-            except InvalidApiKeyError: # Zachytává InvalidApiKeyError                                                                                                                                      
-                errors["base"] = "invalid_api_key"                                                                                                                                                         
-            except ApiConnectionError: # Zachytává ApiConnectionError                                                                                                                                      
-                errors["base"] = "cannot_connect"                                                                                                                                                          
-            except Exception:  # pylint: disable=broad-except # Pro neočekávané chyby                                                                                                                      
-                _LOGGER.exception("Unexpected error during API validation")                                                                                                                                
-                errors["base"] = "unknown"                                              
+                    errors["base"] = "unknown" # Pokud async_fetch_data vrátí None z neznámého důvodu
+            except InvalidApiKeyError: # Zachytává InvalidApiKeyError
+                errors["base"] = "invalid_api_key"
+            except ApiConnectionError: # Zachytává ApiConnectionError
+                errors["base"] = "cannot_connect"
+            except Exception:  # pylint: disable=broad-except # Pro neočekávané chyby
+                _LOGGER.exception("Unexpected error during API validation")
+                errors["base"] = "unknown"
 
         # Get default coordinates from HA config
         default_latitude = self.hass.config.latitude
