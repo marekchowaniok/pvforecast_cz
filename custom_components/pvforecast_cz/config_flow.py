@@ -1,13 +1,10 @@
 """Config flow for PV Forecast CZ integration."""
-import logging
-from typing import Any, Optional
-
+from typing import Any
 import voluptuous as vol
-import aiohttp
 
 from homeassistant import config_entries
-from homeassistant.core import callback
 from homeassistant.const import CONF_API_KEY, CONF_LATITUDE, CONF_LONGITUDE
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 
@@ -20,77 +17,78 @@ from .const import (
     DEFAULT_FORECAST_TYPE,
     DEFAULT_FORECAST_FORMAT,
     DEFAULT_FORECAST_TIME_TYPE,
-    DEFAULT_FORECAST_HOURS
+    DEFAULT_FORECAST_HOURS,
 )
-
-_LOGGER = logging.getLogger(__name__)
-
-# --- API URL ---
-API_URL = "http://www.pvforecast.cz/api/"
-
-async def validate_input(hass, data):
-    """Validate the user input allows us to connect.
-
-    Data has the keys from DATA_SCHEMA with values provided by the user.
-    """
-    session = async_get_clientsession(hass)
-    params = {
-        "key": data[CONF_API_KEY],
-        "lat": data[CONF_LATITUDE],
-        "lon": data[CONF_LONGITUDE],
-        "forecast": data.get(CONF_FORECAST_TYPE, DEFAULT_FORECAST_TYPE),
-        "format": data.get(CONF_FORECAST_FORMAT, DEFAULT_FORECAST_FORMAT),
-        "type": data.get(CONF_FORECAST_TIME_TYPE, DEFAULT_FORECAST_TIME_TYPE),
-        "number": data.get(CONF_FORECAST_HOURS, DEFAULT_FORECAST_HOURS),
-    }
-
-    try:
-        async with session.get(API_URL, params=params) as response:
-            if response.status != 200:
-                raise CannotConnect(f"API returned status code {response.status}")
-            await response.json()  # Check if response is valid JSON
-    except aiohttp.ClientError as e:
-        raise CannotConnect(str(e))
-    except Exception as e:
-        raise CannotConnect(str(e))
-
-    # Return info that you want to store in the config entry.
-    return {"title": "PV Forecast CZ"}
 
 class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for PV Forecast CZ."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Handle the initial step."""
         errors = {}
-        if user_input is not None:
-            try:
-                await validate_input(self.hass, user_input)
-                return self.async_create_entry(
-                    title=user_input.get("title", "PV Forecast CZ"), data=user_input
-                )
-            except CannotConnect:
-                errors["base"] = "cannot_connect"
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
-                errors["base"] = "unknown"
 
-        data_schema = vol.Schema({
-            vol.Required(CONF_API_KEY): cv.string,
-            vol.Required(CONF_LATITUDE): cv.latitude,
-            vol.Required(CONF_LONGITUDE): cv.longitude,
-            vol.Optional(CONF_FORECAST_TYPE, default=DEFAULT_FORECAST_TYPE): cv.string,
-            vol.Optional(CONF_FORECAST_FORMAT, default=DEFAULT_FORECAST_FORMAT): cv.string,
-            vol.Optional(CONF_FORECAST_TIME_TYPE, default=DEFAULT_FORECAST_TIME_TYPE): cv.string,
-            vol.Optional(CONF_FORECAST_HOURS, default=DEFAULT_FORECAST_HOURS): cv.positive_int,
-        })
+        if user_input is not None:
+            # Validate the API key by making a test API call
+            try:
+                session = async_get_clientsession(self.hass)
+                # Use your existing async_fetch_data function
+                test_data = await async_fetch_data(
+                    session,
+                    "https://www.pvforecast.cz/api/",  
+                    {
+                        "key": user_input[CONF_API_KEY],
+                        "lat": user_input[CONF_LATITUDE],
+                        "lon": user_input[CONF_LONGITUDE],
+                        "forecast": DEFAULT_FORECAST_TYPE,
+                        "format": DEFAULT_FORECAST_FORMAT,
+                        "type": DEFAULT_FORECAST_TIME_TYPE,
+                        "number": DEFAULT_FORECAST_HOURS,
+                    },
+                )
+
+                if test_data is not None:
+                    return self.async_create_entry(
+                        title=f"PV Forecast CZ ({user_input[CONF_LATITUDE]}, {user_input[CONF_LONGITUDE]})",
+                        data=user_input,
+                    )
+                else:
+                    errors["base"] = "unknown"
+            except InvalidApiKeyError: # Zachytává InvalidApiKeyError                                                                                                                                      
+                errors["base"] = "invalid_api_key"                                                                                                                                                         
+            except ApiConnectionError: # Zachytává ApiConnectionError                                                                                                                                      
+                errors["base"] = "cannot_connect"                                                                                                                                                          
+            except Exception:  # pylint: disable=broad-except # Pro neočekávané chyby                                                                                                                      
+                _LOGGER.exception("Unexpected error during API validation")                                                                                                                                
+                errors["base"] = "unknown"                                              
+
+        # Get default coordinates from HA config
+        default_latitude = self.hass.config.latitude
+        default_longitude = self.hass.config.longitude
 
         return self.async_show_form(
-            step_id="user", data_schema=data_schema, errors=errors
+            step_id="user",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_API_KEY): str,
+                    vol.Required(
+                        CONF_LATITUDE, default=default_latitude
+                    ): cv.latitude,
+                    vol.Required(
+                        CONF_LONGITUDE, default=default_longitude
+                    ): cv.longitude,
+                    vol.Optional(
+                        CONF_FORECAST_TYPE,
+                        default=DEFAULT_FORECAST_TYPE,
+                    ): vol.In(["pv", "other_type"]),  # Add your valid forecast types
+                    vol.Optional(
+                        CONF_FORECAST_HOURS,
+                        default=DEFAULT_FORECAST_HOURS,
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=168)),
+                }
+            ),
+            errors=errors,
         )
-
-class CannotConnect(Exception):
-    """Error to indicate we cannot connect."""
