@@ -1,0 +1,8 @@
+{
+  "name": "PVforecast.cz sensor",
+  "content_in_root": true,
+  "render_readme": true,
+  "domains": ["sensor"],
+  "homeassistant": "0.99.1",
+  "iot_class": ["Cloud Poll"]
+}

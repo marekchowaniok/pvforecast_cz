@@ -1,0 +1,10 @@
+{
+  "domain": "pvforecast_cz",
+  "name": "PV Forecast CZ",
+  "documentation": "https://github.com/marekchowaniok/pvforecast_cz",
+  "dependencies": [],
+  "codeowners": ["@marekchowaniok"],
+  "requirements": ["aiohttp>=3.7.4"],
+  "config_flow": false,
+  "version": "1.0.0"
+}
