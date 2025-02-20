@@ -1,6 +1,6 @@
-"""Platform for sensor integration."""
+"""Platform for PVForecast.cz sensor integration."""
 import logging
-from typing import Any, Optional, Dict, ClassVar
+from typing import Any, Optional
 import datetime
 
 import aiohttp
@@ -12,7 +12,6 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -108,8 +107,6 @@ async def async_setup_platform(
 class PVForecastCZSensor(SensorEntity):
     """Representation of a PV Forecast CZ sensor."""
 
-    _forecast_ ClassVar[Dict[str, float]] = {}
-
     def __init__(
         self,
         session: aiohttp.ClientSession,
@@ -142,12 +139,15 @@ class PVForecastCZSensor(SensorEntity):
         self.forecast_hours = forecast_hours
 
         self._attr_native_value = None
-        #self._forecast_data = {} # Removed instance level initialization
-        self._last_forecast_update: Optional[datetime.datetime] = None
+        self._forecast_data = {}  # Initialize the forecast data dictionary
+        self._last_forecast_update = None
         self._attr_available = False
 
     async def async_added_to_hass(self) -> None:
         """Handle when the entity is added to Home Assistant."""
+        # Initial data fetch
+        await self._async_update_forecast_data()
+        
         self.async_on_remove(
             async_track_time_interval(
                 self.hass, self._async_scheduled_update, datetime.timedelta(hours=1)
@@ -160,17 +160,29 @@ class PVForecastCZSensor(SensorEntity):
         self.async_write_ha_state()
 
     async def async_update(self) -> None:
-        """Update the sensor value and fetch new forecast data if needed."""
-        current_hour_str = datetime.datetime.now().replace(
+        """Update the sensor value using the current forecast data."""
+        current_hour = datetime.datetime.now().replace(
             minute=0, second=0, microsecond=0
         ).isoformat()
 
-        if current_hour_str in self._forecast_
-            self._attr_native_value = self._forecast_data[current_hour_str]
+        if current_hour in self._forecast_data:
+            self._attr_native_value = self._forecast_data[current_hour]
             self._attr_available = True
         else:
-            self._attr_native_value = None
-            self._attr_available = False
+            # If we don't have data for the current hour, try to fetch new data
+            if not self._forecast_data or (
+                self._last_forecast_update 
+                and (datetime.datetime.now() - self._last_forecast_update).total_seconds() > 3600
+            ):
+                await self._async_update_forecast_data()
+            
+            # Check again after potential update
+            if current_hour in self._forecast_data:
+                self._attr_native_value = self._forecast_data[current_hour]
+                self._attr_available = True
+            else:
+                self._attr_native_value = None
+                self._attr_available = False
 
     async def _async_update_forecast_data(self) -> None:
         """Fetch new forecast data from the API."""
@@ -186,10 +198,15 @@ class PVForecastCZSensor(SensorEntity):
 
         try:
             json_data = await async_fetch_data(self.session, API_URL, params)
-            if json_data is not None:
-                self._forecast_data = {}  # Clear existing data
+            if json_data:
+                self._forecast_data.clear()  # Clear existing data
                 for date, solar in json_data.items():
-                    self._forecast_data[date] = float(solar)  # Ensure numeric type
+                    try:
+                        self._forecast_data[date] = float(solar)
+                    except (TypeError, ValueError) as err:
+                        _LOGGER.warning("Invalid solar value for date %s: %s", date, err)
+                        continue
+                
                 self._cleanup_forecast_data()
                 self._last_forecast_update = datetime.datetime.now()
                 self._attr_available = True
@@ -204,9 +221,6 @@ class PVForecastCZSensor(SensorEntity):
         except aiohttp.ClientError as err:
             _LOGGER.error("Connection error while fetching PV forecast: %s", err)
             self._attr_available = False
-        except ValueError as err:
-            _LOGGER.error("Error parsing JSON: %s", err)
-            self._attr_available = False
         except Exception as err:
             _LOGGER.exception("An unexpected error occurred: %s", err)
             self._attr_available = False
@@ -214,11 +228,15 @@ class PVForecastCZSensor(SensorEntity):
     def _cleanup_forecast_data(self) -> None:
         """Remove past entries from the forecast data."""
         now = datetime.datetime.now()
-        to_delete = [
-            date
-            for date in self._forecast_data
-            if datetime.datetime.fromisoformat(date) < now
-        ]
+        to_delete = []
+        for date in self._forecast_data:
+            try:
+                if datetime.datetime.fromisoformat(date) < now:
+                    to_delete.append(date)
+            except ValueError as err:
+                _LOGGER.warning("Invalid date format: %s, Error: %s", date, err)
+                to_delete.append(date)
+        
         for date in to_delete:
             del self._forecast_data[date]
 
@@ -232,13 +250,14 @@ async def async_fetch_data(
         async with session.get(url, params=params) as response:
             if response.status == 200:
                 return await response.json()
-
+            
             _LOGGER.error(
-                "Error fetching %s, URL: %s, Params: %s",
+                "HTTP error %s fetching data from %s with params: %s",
                 response.status,
                 url,
                 params,
             )
+            return None
     except aiohttp.ClientError as err:
-        _LOGGER.error("Connection error: %s", err)
-
+        _LOGGER.error("Connection error fetching data: %s", err)
+        return None
