@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PV Forecast CZ Setup",
+        "description": "Enter your PV Forecast CZ API key, latitude, and longitude.",
+        "data": {
+          "api_key": "API Key",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "forecast_type": "Forecast Type",
+          "forecast_format": "Forecast Format",
+          "forecast_time_type": "Forecast Time Type",
+          "forecast_hours": "Forecast Hours"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the PV Forecast CZ API. Check your API key, coordinates, and network connection.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  }
+}
