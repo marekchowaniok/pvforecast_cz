@@ -22,4 +22,6 @@ class InvalidApiKeyError(Exception):
 class ApiConnectionError(Exception):
     """Raised when there is an error connecting to the API."""
 
-# ... any other constants you might need ...
+# --- Device info constants ---
+MANUFACTURER = "PV Forecast CZ"
+MODEL = "API"
