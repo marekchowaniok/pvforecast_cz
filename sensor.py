@@ -35,7 +35,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 # --- Constants ---
-API_URL = "http://www.pvforecast.cz/api/"
+API_URL = "https://www.pvforecast.cz/api/"  # Changed to HTTPS
 
 # --- Sensor Entity Descriptions ---
 SENSOR_DESCRIPTIONS = (
@@ -163,7 +163,7 @@ class PVForecastCZSensor(SensorEntity):
             minute=0, second=0, microsecond=0
         ).isoformat()
 
-        if current_hour in self._forecast_
+        if current_hour in self._forecast_data:
             self._attr_native_value = self._forecast_data[current_hour]
             self._attr_available = True
         else:
@@ -175,7 +175,7 @@ class PVForecastCZSensor(SensorEntity):
                 await self._async_update_forecast_data()
 
             # Check again after potential update
-            if current_hour in self._forecast_
+            if current_hour in self._forecast_data:
                 self._attr_native_value = self._forecast_data[current_hour]
                 self._attr_available = True
             else:
@@ -195,8 +195,8 @@ class PVForecastCZSensor(SensorEntity):
         }
 
         try:
-            json_data = await async_fetch_data(self.session, API_URL, params)
-            if json_
+            json_data = await self.async_fetch_data(self.session, API_URL, params)
+            if json_data:
                 self._forecast_data.clear()  # Clear existing data
                 for date, solar in json_data.items():
                     try:
@@ -216,7 +216,10 @@ class PVForecastCZSensor(SensorEntity):
             else:
                 _LOGGER.warning("No data received from PVforecast API")
                 self._attr_available = False
-        except aiohttp.ClientError as err:
+        except InvalidApiKeyError:
+            _LOGGER.error("Invalid API key")
+            self._attr_available = False
+        except ApiConnectionError as err:
             _LOGGER.error("Connection error while fetching PV forecast: %s", err)
             self._attr_available = False
         except Exception as err:
@@ -227,7 +230,7 @@ class PVForecastCZSensor(SensorEntity):
         """Remove past entries from the forecast data."""
         now = datetime.datetime.now()
         to_delete = []
-        for date in self._forecast_
+        for date in self._forecast_data:
             try:
                 if datetime.datetime.fromisoformat(date) < now:
                     to_delete.append(date)
@@ -238,6 +241,7 @@ class PVForecastCZSensor(SensorEntity):
         for date in to_delete:
             del self._forecast_data[date]
 
+    @staticmethod
     async def async_fetch_data(
         session: aiohttp.ClientSession,
         url: str,
@@ -262,5 +266,5 @@ class PVForecastCZSensor(SensorEntity):
                     )
                     return None
         except aiohttp.ClientError as err:
-            _LOGGER.error("Connection error fetching  %s", err)
+            _LOGGER.error("Connection error fetching data: %s", err)
             raise ApiConnectionError from err
