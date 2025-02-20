@@ -10,6 +10,9 @@ CONF_FORECAST_FORMAT = "forecast_format"
 CONF_FORECAST_TIME_TYPE = "forecast_time_type"
 CONF_FORECAST_HOURS = "forecast_hours"
 
+MANUFACTURER = "PV Forecast CZ"
+MODEL = "API"
+
 DEFAULT_FORECAST_TYPE = "pv"
 DEFAULT_FORECAST_FORMAT = "json"
 DEFAULT_FORECAST_TIME_TYPE = "hour"
@@ -22,6 +25,3 @@ class InvalidApiKeyError(Exception):
 class ApiConnectionError(Exception):
     """Raised when there is an error connecting to the API."""
 
-# --- Device info constants ---
-MANUFACTURER = "PV Forecast CZ"
-MODEL = "API"
