@@ -195,7 +195,8 @@ async def async_update(self) -> None:
 
         try:
             json_data = await async_fetch_data(self.session, API_URL, params)
-            if json_
+            if json_data:
+                _LOGGER.debug("Received data from PVforecast API: %s", json_data)
                 self._forecast_data.clear()  # Clear existing data
                 for date, solar in json_data.items():
                     try:
