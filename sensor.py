@@ -2,6 +2,7 @@
 import asyncio
 import datetime
 import logging
+from typing import Any, Optional
 
 import aiohttp
 import voluptuous as vol
@@ -17,17 +18,18 @@ from homeassistant.const import CONF_API_KEY, CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.entity import DeviceInfo
 
 from .const import (
     DOMAIN,
-    CONF_API_KEY,
-    CONF_LATITUDE,
-    CONF_LONGITUDE,
     CONF_FORECAST_TYPE,
     CONF_FORECAST_FORMAT,
     CONF_FORECAST_TIME_TYPE,
     CONF_FORECAST_HOURS,
+    MANUFACTURER,
+    MODEL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,23 +63,22 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_FORECAST_HOURS, default=DEFAULT_FORECAST_HOURS): cv.positive_int,
 })
 
-# --- Setup ---
 async def async_setup_platform(
     hass: HomeAssistant,
-    config,
+    config: dict[str, Any],
     async_add_entities: AddEntitiesCallback,
-    discovery_info=None,
-):
+    discovery_info: Optional[dict[str, Any]] = None,
+) -> None:
     """Set up the sensor platform from a config entry."""
-    api_key = config.get(CONF_API_KEY)
-    latitude = config.get(CONF_LATITUDE)
-    longitude = config.get(CONF_LONGITUDE)
-    forecast_type = config.get(CONF_FORECAST_TYPE)
-    forecast_format = config.get(CONF_FORECAST_FORMAT)
-    forecast_time_type = config.get(CONF_FORECAST_TIME_TYPE)
-    forecast_hours = config.get(CONF_FORECAST_HOURS)
+    api_key = config[CONF_API_KEY]
+    latitude = config[CONF_LATITUDE]
+    longitude = config[CONF_LONGITUDE]
+    forecast_type = config[CONF_FORECAST_TYPE]
+    forecast_format = config[CONF_FORECAST_FORMAT]
+    forecast_time_type = config[CONF_FORECAST_TIME_TYPE]
+    forecast_hours = config[CONF_FORECAST_HOURS]
 
-    session = aiohttp.ClientSession()
+    session = async_get_clientsession(hass)
 
     sensors = []
     for description in SENSOR_DESCRIPTIONS:
@@ -97,23 +98,31 @@ async def async_setup_platform(
 
     async_add_entities(sensors, update_before_add=True)
 
-# --- Sensor Entity ---
 class PVForecastCZSensor(SensorEntity):
     """Representation of a PV Forecast CZ sensor."""
 
     def __init__(
         self,
-        session,
-        api_key,
-        latitude,
-        longitude,
-        forecast_type,
-        forecast_format,
-        forecast_time_type,
-        forecast_hours,
+        session: aiohttp.ClientSession,
+        api_key: str,
+        latitude: float,
+        longitude: float,
+        forecast_type: str,
+        forecast_format: str,
+        forecast_time_type: str,
+        forecast_hours: int,
         entity_description: SensorEntityDescription,
-    ):
+    ) -> None:
         """Initialize the sensor."""
+        self.entity_description = entity_description
+        self._attr_unique_id = f"pvforecast_cz_{latitude}_{longitude}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"pvforecast_cz_{latitude}_{longitude}")},
+            name="PV Forecast CZ",
+            manufacturer=MANUFACTURER,
+            model=MODEL,
+        )
+        
         self.session = session
         self.api_key = api_key
         self.latitude = latitude
@@ -122,20 +131,13 @@ class PVForecastCZSensor(SensorEntity):
         self.forecast_format = forecast_format
         self.forecast_time_type = forecast_time_type
         self.forecast_hours = forecast_hours
-        self.entity_description = entity_description
 
-        self._value = None
-        self._forecast_data = {}
-        self._last_forecast_update = None
-        self._last_data_update = None
-        self._available = False
+        self._attr_native_value = None
+        self._forecast_data: dict[str, float] = {}
+        self._last_forecast_update: Optional[datetime.datetime] = None
+        self._attr_available = False
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self._available
-
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Handle when the entity is added to Home Assistant."""
         self.async_on_remove(
             async_track_time_interval(
@@ -143,22 +145,25 @@ class PVForecastCZSensor(SensorEntity):
             )
         )
 
-    async def _async_scheduled_update(self, now: datetime.datetime):
+    async def _async_scheduled_update(self, now: datetime.datetime) -> None:
         """Perform a scheduled update."""
         await self._async_update_forecast_data()
         self.async_write_ha_state()
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Update the sensor value and fetch new forecast data if needed."""
-        current_hour_str = str(datetime.datetime.now().replace(minute=0, second=0, microsecond=0))
-        if current_hour_str in self._forecast_
-            self._value = self._forecast_data[current_hour_str]
-            self._available = True
+        current_hour_str = datetime.datetime.now().replace(
+            minute=0, second=0, microsecond=0
+        ).isoformat()
+        
+        if current_hour_str in self._forecast_data:
+            self._attr_native_value = self._forecast_data[current_hour_str]
+            self._attr_available = True
         else:
-            self._value = None
-            self._available = False
+            self._attr_native_value = None
+            self._attr_available = False
 
-    async def _async_update_forecast_data(self):
+    async def _async_update_forecast_data(self) -> None:
         """Fetch new forecast data from the API."""
         params = {
             "key": self.api_key,
@@ -175,30 +180,30 @@ class PVForecastCZSensor(SensorEntity):
             if json_data is not None:
                 self._forecast_data = {}  # Clear existing data
                 for date, solar in json_data.items():
-                    self._forecast_data[date] = solar
-                self._cleanup_forecast_data() # Cleanup after new data is loaded
+                    self._forecast_data[date] = float(solar)  # Ensure numeric type
+                self._cleanup_forecast_data()
                 self._last_forecast_update = datetime.datetime.now()
-                self._available = True
-                _LOGGER.info(
+                self._attr_available = True
+                _LOGGER.debug(
                     "Retrieved new PVforecast data from %s: %s",
                     API_URL,
                     self._forecast_data,
                 )
             else:
-                _LOGGER.warning("No data received from PVforecast API. Check API response or connection.")
-                self._available = False # Set availability to False if no data
-        except aiohttp.ClientError as e:
-            _LOGGER.error("Connection error while fetching PV forecast: %s", e)
-            self._available = False
-        except ValueError as e:
-            _LOGGER.error("Error parsing JSON  %s", e)
-            self._available = False
-        except Exception as e:
-            _LOGGER.exception("An unexpected error occurred: %s", e)
-            self._available = False
+                _LOGGER.warning("No data received from PVforecast API")
+                self._attr_available = False
+        except aiohttp.ClientError as err:
+            _LOGGER.error("Connection error while fetching PV forecast: %s", err)
+            self._attr_available = False
+        except ValueError as err:
+            _LOGGER.error("Error parsing JSON: %s", err)
+            self._attr_available = False
+        except Exception as err:
+            _LOGGER.exception("An unexpected error occurred: %s", err)
+            self._attr_available = False
 
-    def _cleanup_forecast_data(self):
-        """Removes past entries from the forecast data."""
+    def _cleanup_forecast_data(self) -> None:
+        """Remove past entries from the forecast data."""
         now = datetime.datetime.now()
         to_delete = [
             date
@@ -208,21 +213,24 @@ class PVForecastCZSensor(SensorEntity):
         for date in to_delete:
             del self._forecast_data[date]
 
-async def async_fetch_data(session, url, params):
-    """
-    Fetches JSON data from the API asynchronously.
-
-    Args:
-        session: aiohttp ClientSession.
-        url: API URL to fetch data from.
-        params: Dictionary of parameters to send with the request.
-
-    Returns:
-        JSON response from the API if successful, None otherwise.
-    """
-    async with session.get(url, params=params) as response:
-        if response.status == 200:
-            return await response.json()
-        else:
-            _LOGGER.error(f"Error fetching  {response.status}, URL: {url}, Params: {params}") # Added URL and params to log
+async def async_fetch_data(
+    session: aiohttp.ClientSession,
+    url: str,
+    params: dict[str, Any]
+) -> Optional[dict[str, Any]]:
+    """Fetch JSON data from the API asynchronously."""
+    try:
+        async with session.get(url, params=params) as response:
+            if response.status == 200:
+                return await response.json()
+            
+            _LOGGER.error(
+                "Error fetching data: %s, URL: %s, Params: %s",
+                response.status,
+                url,
+                params,
+            )
             return None
+    except aiohttp.ClientError as err:
+        _LOGGER.error("Connection error: %s", err)
+        return None
