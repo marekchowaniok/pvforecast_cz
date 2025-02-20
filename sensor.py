@@ -1,5 +1,10 @@
 """Platform for PVForecast.cz sensor integration."""
 import logging
+
+_LOGGER = logging.getLogger(__name__)
+
+_LOGGER.debug("Loading sensor.py...")  # Add this line
+
 from typing import Any, Optional
 import datetime
 
@@ -32,7 +37,7 @@ from .const import (
     MODEL
 )
 
-_LOGGER = logging.getLogger(__name__)
+
 
 # --- Constants ---
 API_URL = "https://www.pvforecast.cz/api/"  # Changed to HTTPS
