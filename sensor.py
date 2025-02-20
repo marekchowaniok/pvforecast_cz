@@ -157,31 +157,30 @@ class PVForecastCZSensor(SensorEntity):
         await self._async_update_forecast_data()
         self.async_write_ha_state()
 
-    async def async_update(self) -> None:
-        """Update the sensor value using the current forecast data."""
-        current_hour = datetime.datetime.now().replace(
-            minute=0, second=0, microsecond=0
-        ).isoformat()
+async def async_update(self) -> None:
+    """Update the sensor value using the current forecast data."""
+    current_hour = datetime.datetime.now().replace(
+        minute=0, second=0, microsecond=0
+    ).isoformat()
 
-        if current_hour in self._forecast_
+    if current_hour in self._forecast_data:
+        self._attr_native_value = self._forecast_data[current_hour]
+        self._attr_available = True
+    else:
+        # If we don't have data for the current hour, try to fetch new data
+        if not self._forecast_data or (
+            self._last_forecast_update 
+            and (datetime.datetime.now() - self._last_forecast_update).total_seconds() > 3600
+        ):
+            await self._async_update_forecast_data()
+        
+        # Check again after potential update
+        if current_hour in self._forecast_data:
             self._attr_native_value = self._forecast_data[current_hour]
             self._attr_available = True
         else:
-            # If we don't have data for the current hour, try to fetch new data
-            if not self._forecast_data or (
-                self._last_forecast_update
-                and (datetime.datetime.now() - self._last_forecast_update).total_seconds() > 3600
-            ):
-                await self._async_update_forecast_data()
-
-            # Check again after potential update
-            if current_hour in self._forecast_
-                self._attr_native_value = self._forecast_data[current_hour]
-                self._attr_available = True
-            else:
-                self._attr_native_value = None
-                self._attr_available = False
-
+            self._attr_native_value = None
+            self._attr_available = False
     async def _async_update_forecast_data(self) -> None:
         """Fetch new forecast data from the API."""
         params = {
@@ -227,14 +226,14 @@ class PVForecastCZSensor(SensorEntity):
         """Remove past entries from the forecast data."""
         now = datetime.datetime.now()
         to_delete = []
-        for date in self._forecast_
+        for date in self._forecast_data:
             try:
                 if datetime.datetime.fromisoformat(date) < now:
                     to_delete.append(date)
             except ValueError as err:
                 _LOGGER.warning("Invalid date format: %s, Error: %s", date, err)
                 to_delete.append(date)
-
+        
         for date in to_delete:
             del self._forecast_data[date]
 
@@ -249,18 +248,18 @@ async def async_fetch_data(
             if response.status == 200:
                 return await response.json()
             elif response.status == 401 or response.status == 403:
-                 _LOGGER.error(
-                     "API error %s: Invalid API key", response.status
-                 )
-                 raise InvalidApiKeyError
-             else:
-                 _LOGGER.error(
-                     "HTTP error %s fetching data from %s with params: %s",
-                     response.status,
-                     url,
-                     params,
-            )
-            return None
+                _LOGGER.error(
+                    "API error %s: Invalid API key", response.status
+                )
+                raise InvalidApiKeyError
+            else:
+                _LOGGER.error(
+                    "HTTP error %s fetching data from %s with params: %s",
+                    response.status,
+                    url,
+                    params,
+                )
+                return None
     except aiohttp.ClientError as err:
-        _LOGGER.error("Connection error fetching  %s", err)
+        _LOGGER.error("Connection error fetching data: %s", err)
         raise ApiConnectionError from err
