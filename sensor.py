@@ -1,5 +1,4 @@
 """Platform for sensor integration."""
-import asyncio
 import datetime
 import logging
 from typing import Any, Optional
@@ -57,10 +56,18 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_API_KEY): cv.string,
     vol.Required(CONF_LATITUDE): cv.latitude,
     vol.Required(CONF_LONGITUDE): cv.longitude,
-    vol.Optional(CONF_FORECAST_TYPE, default=DEFAULT_FORECAST_TYPE): cv.string,
-    vol.Optional(CONF_FORECAST_FORMAT, default=DEFAULT_FORECAST_FORMAT): cv.string,
-    vol.Optional(CONF_FORECAST_TIME_TYPE, default=DEFAULT_FORECAST_TIME_TYPE): cv.string,
-    vol.Optional(CONF_FORECAST_HOURS, default=DEFAULT_FORECAST_HOURS): cv.positive_int,
+    vol.Optional(
+        CONF_FORECAST_TYPE, default=DEFAULT_FORECAST_TYPE
+    ): cv.string,
+    vol.Optional(
+        CONF_FORECAST_FORMAT, default=DEFAULT_FORECAST_FORMAT
+    ): cv.string,
+    vol.Optional(
+        CONF_FORECAST_TIME_TYPE, default=DEFAULT_FORECAST_TIME_TYPE
+    ): cv.string,
+    vol.Optional(
+        CONF_FORECAST_HOURS, default=DEFAULT_FORECAST_HOURS
+    ): cv.positive_int,
 })
 
 async def async_setup_platform(
@@ -133,7 +140,7 @@ class PVForecastCZSensor(SensorEntity):
         self.forecast_hours = forecast_hours
 
         self._attr_native_value = None
-        self._forecast_data: dict[str, float] = {}
+        self._forecast_ dict[str, float] = {}
         self._last_forecast_update: Optional[datetime.datetime] = None
         self._attr_available = False
 
@@ -156,7 +163,7 @@ class PVForecastCZSensor(SensorEntity):
             minute=0, second=0, microsecond=0
         ).isoformat()
         
-        if current_hour_str in self._forecast_data:
+        if current_hour_str in self._forecast_
             self._attr_native_value = self._forecast_data[current_hour_str]
             self._attr_available = True
         else:
@@ -223,9 +230,9 @@ async def async_fetch_data(
         async with session.get(url, params=params) as response:
             if response.status == 200:
                 return await response.json()
-            
+
             _LOGGER.error(
-                "Error fetching data: %s, URL: %s, Params: %s",
+                "Error fetching  %s, URL: %s, Params: %s",
                 response.status,
                 url,
                 params,
@@ -233,4 +240,4 @@ async def async_fetch_data(
             return None
     except aiohttp.ClientError as err:
         _LOGGER.error("Connection error: %s", err)
-        return None
+
