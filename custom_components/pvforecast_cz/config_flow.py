@@ -1,6 +1,7 @@
 """Config flow for PV Forecast CZ integration."""
 from typing import Any
 import voluptuous as vol
+import logging
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_API_KEY, CONF_LATITUDE, CONF_LONGITUDE
@@ -21,6 +22,11 @@ from .const import (
     InvalidApiKeyError,
     ApiConnectionError,
 )
+
+from .sensor import async_fetch_data
+
+_LOGGER = logging.getLogger(__name__)
+
 
 class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for PV Forecast CZ."""
