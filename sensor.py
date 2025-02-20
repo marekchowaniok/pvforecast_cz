@@ -1,7 +1,7 @@
 """Platform for sensor integration."""
 import datetime
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 import aiohttp
 import voluptuous as vol
@@ -108,6 +108,8 @@ async def async_setup_platform(
 class PVForecastCZSensor(SensorEntity):
     """Representation of a PV Forecast CZ sensor."""
 
+    _forecast_ Dict[str, float]
+
     def __init__(
         self,
         session: aiohttp.ClientSession,
@@ -129,7 +131,7 @@ class PVForecastCZSensor(SensorEntity):
             manufacturer=MANUFACTURER,
             model=MODEL,
         )
-        
+
         self.session = session
         self.api_key = api_key
         self.latitude = latitude
@@ -140,7 +142,7 @@ class PVForecastCZSensor(SensorEntity):
         self.forecast_hours = forecast_hours
 
         self._attr_native_value = None
-        self._forecast_ dict[str, float] = {}
+        self._forecast_data = {}
         self._last_forecast_update: Optional[datetime.datetime] = None
         self._attr_available = False
 
@@ -162,7 +164,7 @@ class PVForecastCZSensor(SensorEntity):
         current_hour_str = datetime.datetime.now().replace(
             minute=0, second=0, microsecond=0
         ).isoformat()
-        
+
         if current_hour_str in self._forecast_
             self._attr_native_value = self._forecast_data[current_hour_str]
             self._attr_available = True
