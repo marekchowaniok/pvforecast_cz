@@ -1,5 +1,4 @@
 """Platform for sensor integration."""
-import datetime
 import logging
 from typing import Any, Optional, Dict
 
@@ -234,12 +233,11 @@ async def async_fetch_data(
                 return await response.json()
 
             _LOGGER.error(
-                "Error fetching  %s, URL: %s, Params: %s",
+                "Error fetching %s, URL: %s, Params: %s",
                 response.status,
                 url,
                 params,
             )
-            return None
     except aiohttp.ClientError as err:
         _LOGGER.error("Connection error: %s", err)
 
