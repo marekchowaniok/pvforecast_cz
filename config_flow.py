@@ -41,36 +41,40 @@ class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             # Validate the API key by making a test API call
-            try:
-                session = async_get_clientsession(self.hass)
-                test_data = await async_fetch_data(
-                    session,
-                    "https://www.pvforecast.cz/api/",
-                    {
-                        "key": user_input[CONF_API_KEY],
-                        "lat": user_input[CONF_LATITUDE],
-                        "lon": user_input[CONF_LONGITUDE],
-                        "forecast": DEFAULT_FORECAST_TYPE,
-                        "format": DEFAULT_FORECAST_FORMAT,
-                        "type": DEFAULT_FORECAST_TIME_TYPE,
-                        "number": DEFAULT_FORECAST_HOURS,
-                    },
-                )
+            # try:
+            #     session = async_get_clientsession(self.hass)
+            #     test_data = await async_fetch_data(
+            #         session,
+            #         "https://www.pvforecast.cz/api/",
+            #         {
+            #             "key": user_input[CONF_API_KEY],
+            #             "lat": user_input[CONF_LATITUDE],
+            #             "lon": user_input[CONF_LONGITUDE],
+            #             "forecast": DEFAULT_FORECAST_TYPE,
+            #             "format": DEFAULT_FORECAST_FORMAT,
+            #             "type": DEFAULT_FORECAST_TIME_TYPE,
+            #             "number": DEFAULT_FORECAST_HOURS,
+            #         },
+            #     )
 
-                if test_data is not None:
-                    return self.async_create_entry(
-                        title=f"PV Forecast CZ ({user_input[CONF_LATITUDE]}, {user_input[CONF_LONGITUDE]})",
-                        data=user_input,
-                    )
-                else:
-                    errors["base"] = "unknown" # Pokud async_fetch_data vrátí None z neznámého důvodu
-            except InvalidApiKeyError: # Zachytává InvalidApiKeyError
-                errors["base"] = "invalid_api_key"
-            except ApiConnectionError: # Zachytává ApiConnectionError
-                errors["base"] = "cannot_connect"
-            except Exception:  # pylint: disable=broad-except # Pro neočekávané chyby
-                _LOGGER.exception("Unexpected error during API validation")
-                errors["base"] = "unknown"
+            #     if test_data is not None:
+            #         return self.async_create_entry(
+            #             title=f"PV Forecast CZ ({user_input[CONF_LATITUDE]}, {user_input[CONF_LONGITUDE]})",
+            #             data=user_input,
+            #         )
+            #     else:
+            #         errors["base"] = "unknown" # Pokud async_fetch_data vrátí None z neznámého důvodu
+            # except InvalidApiKeyError: # Zachytává InvalidApiKeyError
+            #     errors["base"] = "invalid_api_key"
+            # except ApiConnectionError: # Zachytává ApiConnectionError
+            #     errors["base"] = "cannot_connect"
+            # except Exception:  # pylint: disable=broad-except # Pro neočekávané chyby
+            #     _LOGGER.exception("Unexpected error during API validation")
+            #     errors["base"] = "unknown"
+            return self.async_create_entry(
+                title=f"PV Forecast CZ ({user_input[CONF_LATITUDE]}, {user_input[CONF_LONGITUDE]})",
+                data=user_input,
+            )
 
         # Get default coordinates from HA config
         default_latitude = self.hass.config.latitude
