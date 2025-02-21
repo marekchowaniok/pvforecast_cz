@@ -42,7 +42,7 @@ class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            Validate the API key by making a test API call
+            # Validate the API key by making a test API call
             try:
                 session = async_get_clientsession(self.hass)
                 test_data = await async_fetch_data(
