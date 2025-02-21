@@ -246,7 +246,7 @@ class PVForecastCZSensor(SensorEntity):
         for date in to_delete:
             del self._forecast_data[date]
 
-    @staticmethod
+    # @staticmethod
     async def async_fetch_data(
         session: aiohttp.ClientSession,
         url: str,
