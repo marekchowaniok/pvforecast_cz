@@ -1,4 +1,8 @@
 """Config flow for PV Forecast CZ integration."""
+import logging
+_LOGGER = logging.getLogger(__name__)
+_LOGGER.debug("Loading config_flow.py...")  # Add this line
+
 from typing import Any
 import voluptuous as vol
 import logging
@@ -23,18 +27,14 @@ from .const import (
     ApiConnectionError,
 )
 
-import logging
-_LOGGER = logging.getLogger(__name__)
-
-_LOGGER.debug("Loading config_flow.py...")  # Add this line
 from .sensor import async_fetch_data
-
+_LOGGER.debug("Loading config_flow.py...2") 
 
 class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for PV Forecast CZ."""
 
     VERSION = 1
-
+    
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
