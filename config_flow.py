@@ -27,7 +27,7 @@ from .const import (
     ApiConnectionError,
 )
 
-from .sensor import async_fetch_data
+# from .sensor import async_fetch_data
 _LOGGER.debug("Loading config_flow.py...2") 
 
 class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
