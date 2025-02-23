@@ -8,24 +8,45 @@ import voluptuous as vol
 import logging
 
 from homeassistant import config_entries
-from homeassistant.const import CONF_API_KEY, CONF_LATITUDE, CONF_LONGITUDE
+# from homeassistant.const import CONF_API_KEY, CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 
 from .const import (
     DOMAIN,
+    CONF_API_KEY, 
+    CONF_LATITUDE, 
+    CONF_LONGITUDE,
     CONF_FORECAST_TYPE,
     CONF_FORECAST_FORMAT,
-    CONF_FORECAST_TIME_TYPE,
-    CONF_FORECAST_HOURS,
+    CONF_FORECAST_TYPE,
+    CONF_FORECAST_NUMBER,
     DEFAULT_FORECAST_TYPE,
     DEFAULT_FORECAST_FORMAT,
     DEFAULT_FORECAST_TIME_TYPE,
-    DEFAULT_FORECAST_HOURS,
+    DEFAULT_FORECAST_NUMBER,
     InvalidApiKeyError,
     ApiConnectionError,
 )
+
+# CONF_API_KEY = "api_key"
+# CONF_LATITUDE = "latitude"
+# CONF_LONGITUDE = "longitude"
+# CONF_FORECAST_TYPE = "forecast_type" #Určení typu předpovědi. Sluneční svit (pv), teplota (temp),srážkový úhrn (rain)
+# CONF_FORECAST_FORMAT = "forecast_format"
+# CONF_FORECAST_TYPE = "forecast_type" # Hodinové nebo denní sumy
+# CONF_FORECAST_NUMBER = "forecast_number" #Delka predpovedi v hodinach nebo dnech
+
+# MANUFACTURER = "PV Forecast CZ"
+# MODEL = "API"
+
+# DEFAULT_FORECAST_TYPE = "pv"
+# DEFAULT_FORECAST_FORMAT = "json"
+# DEFAULT_FORECAST_TIME_TYPE = "day"
+# DEFAULT_FORECAST_NUMBER = 1
+
+
 
 # from .sensor import async_fetch_data
 _LOGGER.debug("Loading config_flow.py...2") 
@@ -35,9 +56,7 @@ class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
     
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user( self, user_input: dict[str, Any] | None = None ) -> FlowResult:
         """Handle the initial step."""
         errors = {}
 
@@ -82,24 +101,36 @@ class PVForecastCZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         default_latitude = self.hass.config.latitude
         default_longitude = self.hass.config.longitude
 
+        # options_schema=vol.Schema(
+        #         {
+        #             vol.Required(CONF_API_KEY): str,
+        #             vol.Required(CONF_LATITUDE, default=default_latitude): str,
+        #             vol.Required(CONF_LONGITUDE, default=default_longitude): str,
+        #             vol.Optional(
+        #                 CONF_FORECAST_TYPE,
+        #                 default=DEFAULT_FORECAST_TYPE,
+        #             ): vol.In(["pv","day"]),  
+        #             vol.Optional(
+        #                 CONF_FORECAST_HOURS,
+        #                 default=DEFAULT_FORECAST_HOURS,
+        #             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=168)),
+        #         }
+        #     ),
+
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_API_KEY): str,
-                    vol.Required(
-                        CONF_LATITUDE, default=default_latitude
-                    ): cv.latitude,
-                    vol.Required(
-                        CONF_LONGITUDE, default=default_longitude
-                    ): cv.longitude,
+                    vol.Required(CONF_LATITUDE, default=default_latitude): str,
+                    vol.Required(CONF_LONGITUDE, default=default_longitude): str,
                     vol.Optional(
                         CONF_FORECAST_TYPE,
                         default=DEFAULT_FORECAST_TYPE,
                     ): vol.In(["pv", "other_type"]),  # Add your valid forecast types
                     vol.Optional(
-                        CONF_FORECAST_HOURS,
-                        default=DEFAULT_FORECAST_HOURS,
+                        CONF_FORECAST_NUMBER,
+                        default=DEFAULT_FORECAST_NUMBER,
                     ): vol.All(vol.Coerce(int), vol.Range(min=1, max=168)),
                 }
             ),

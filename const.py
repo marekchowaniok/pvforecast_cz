@@ -5,18 +5,18 @@ DOMAIN = "pvforecast_cz"
 CONF_API_KEY = "api_key"
 CONF_LATITUDE = "latitude"
 CONF_LONGITUDE = "longitude"
-CONF_FORECAST_TYPE = "forecast_type"
+CONF_FORECAST_TYPE = "forecast_type" #Určení typu předpovědi. Sluneční svit (pv), teplota (temp),srážkový úhrn (rain)
 CONF_FORECAST_FORMAT = "forecast_format"
-CONF_FORECAST_TIME_TYPE = "forecast_time_type"
-CONF_FORECAST_HOURS = "forecast_hours"
+CONF_FORECAST_TYPE = "forecast_type" # Hodinové nebo denní sumy
+CONF_FORECAST_NUMBER = "forecast_number" #Delka predpovedi v hodinach nebo dnech
 
 MANUFACTURER = "PV Forecast CZ"
 MODEL = "API"
 
 DEFAULT_FORECAST_TYPE = "pv"
 DEFAULT_FORECAST_FORMAT = "json"
-DEFAULT_FORECAST_TIME_TYPE = "hour"
-DEFAULT_FORECAST_HOURS = 72
+DEFAULT_FORECAST_TIME_TYPE = "day"
+DEFAULT_FORECAST_NUMBER = 1
 
 # --- Custom Exceptions ---
 class InvalidApiKeyError(Exception):

@@ -29,8 +29,8 @@ from .const import (
     DOMAIN,
     CONF_FORECAST_TYPE,
     CONF_FORECAST_FORMAT,
-    CONF_FORECAST_TIME_TYPE,
-    CONF_FORECAST_HOURS,
+    CONF_FORECAST_TYPE,
+    CONF_FORECAST_NUMBER,
     InvalidApiKeyError,
     ApiConnectionError,
     MANUFACTURER,
@@ -65,10 +65,10 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
         CONF_FORECAST_FORMAT, default="json"
     ): cv.string,
     vol.Optional(
-        CONF_FORECAST_TIME_TYPE, default="hour"
+        CONF_FORECAST_TYPE, default="day"
     ): cv.string,
     vol.Optional(
-        CONF_FORECAST_HOURS, default=72
+        CONF_FORECAST_NUMBER, default=1
     ): cv.positive_int,
 })
 
@@ -84,8 +84,8 @@ async def async_setup_platform(
     longitude = config[CONF_LONGITUDE]
     forecast_type = config[CONF_FORECAST_TYPE]
     forecast_format = config[CONF_FORECAST_FORMAT]
-    forecast_time_type = config[CONF_FORECAST_TIME_TYPE]
-    forecast_hours = config[CONF_FORECAST_HOURS]
+    forecast_time_type = config[CONF_FORECAST_TYPE]
+    forecast_hours = config[CONF_FORECAST_NUMBER]
 
     session = async_get_clientsession(hass)
 
